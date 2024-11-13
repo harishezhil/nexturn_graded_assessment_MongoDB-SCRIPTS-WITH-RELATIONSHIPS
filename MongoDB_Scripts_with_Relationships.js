@@ -1,8 +1,6 @@
 // Part 1: Basic MongoDB Commands and Queries
 
-// 1. Create the Collections and Insert Data:
 
-// Inserting customer documents into the customers collection
 db.customers.insertMany([
     { 
         name: "John Doe", 
@@ -41,11 +39,10 @@ db.customers.insertMany([
     }
 ]);
 
-// Inserting order documents into the orders collection, linked to customers by customer_id
 db.orders.insertMany([
     { 
         order_id: "ORD123456", 
-        customer_id: ObjectId('67320c549ec744648a0d8190'), // John Doe's ObjectId
+        customer_id: ObjectId('67320c549ec744648a0d8190'), 
         order_date: new Date("2023-05-15T14:00:00Z"), 
         status: "shipped", 
         items: [
@@ -100,7 +97,6 @@ db.orders.insertMany([
 
 // Part 2: Aggregation Pipeline
 
-// 1. Calculate Total Value of All Orders by Customer
 db.orders.aggregate([
     { $group: { _id: "$customer_id", total_spent: { $sum: "$total_value" } } },
     { $lookup: { from: "customers", localField: "_id", foreignField: "_id", as: "customer" } },
@@ -108,12 +104,10 @@ db.orders.aggregate([
     { $project: { name: "$customer.name", total_spent: 1 } }
 ]);
 
-// 2. Group Orders by Status
 db.orders.aggregate([
     { $group: { _id: "$status", order_count: { $sum: 1 } } }
 ]);
 
-// 3. List Customers with Their Recent Orders
 db.orders.aggregate([
     { $sort: { order_date: -1 } },
     { $group: { _id: "$customer_id", recent_order: { $first: "$$ROOT" } } },
@@ -122,7 +116,6 @@ db.orders.aggregate([
     { $project: { name: "$customer.name", email: "$customer.email", order_id: "$recent_order.order_id", total_value: "$recent_order.total_value" } }
 ]);
 
-// 4. Find the Most Expensive Order by Customer
 db.orders.aggregate([
     { $sort: { total_value: -1 } },
     { $group: { _id: "$customer_id", most_expensive_order: { $first: "$$ROOT" } } },
@@ -131,9 +124,7 @@ db.orders.aggregate([
     { $project: { name: "$customer.name", order_id: "$most_expensive_order.order_id", total_value: "$most_expensive_order.total_value" } }
 ]);
 
-// Part 3: Real-World Scenario with Relationships
 
-// 1. Find All Customers Who Placed Orders in the Last Month
 db.orders.aggregate([
     { $match: { order_date: { $gte: new Date(new Date().setMonth(new Date().getMonth() - 1)) } } },
     { $group: { _id: "$customer_id", recent_order: { $first: "$$ROOT" } } },
@@ -142,7 +133,6 @@ db.orders.aggregate([
     { $project: { name: "$customer.name", email: "$customer.email", order_date: "$recent_order.order_date" } }
 ]);
 
-// 2. Find All Products Ordered by a Specific Customer
 db.orders.aggregate([
     { $match: { customer_id: ObjectId('67320c549ec744648a0d8190') } },
     { $unwind: "$items" },
@@ -159,7 +149,6 @@ db.orders.aggregate([
     { $project: { name: "$customer.name", total_spent: 1 } }
 ]);
 
-// 4. Add a New Order for an Existing Customer
 db.orders.insertOne({
     order_id: "ORD123461",
     customer_id: ObjectId("67320c549ec744648a0d8191"),
@@ -174,14 +163,12 @@ db.orders.insertOne({
 
 // Part 4: Bonus Challenge
 
-// 1. Find Customers Who Have Not Placed Orders
 db.customers.aggregate([
     { $lookup: { from: "orders", localField: "_id", foreignField: "customer_id", as: "orders" } },
     { $match: { "orders": { $size: 0 } } },
     { $project: { name: 1, email: 1 } }
 ]);
 
-// 2. Find the Most Popular Product in Orders
 db.orders.aggregate([
     { $unwind: "$items" },
     { $group: { _id: "$items.product_name", total_quantity: { $sum: "$items.quantity" } } },
@@ -189,7 +176,6 @@ db.orders.aggregate([
     { $limit: 1 }
 ]);
 
-// 3. Find the Total Number of Orders by Each Customer
 db.orders.aggregate([
     { $group: { _id: "$customer_id", order_count: { $sum: 1 } } },
     { $lookup: { from: "customers", localField: "_id", foreignField: "_id", as: "customer" } },
